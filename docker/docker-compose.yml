@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: db
+    image: postgres:12
+    restart: always
+    environment:
+      POSTGRES_USER: db
+      POSTGRES_PASSWORD: db
+      POSTGRES_DB: db
+    ports:
+        - "5433:5433"
+    expose:
+      - 5433
+    command: -p 5433
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backup:/var/backup
+
+  php-fpm:
+    restart: always
+    container_name: php-fpm
+    build:
+      context: ./php-fpm
+    depends_on:
+      - db
+    environment:
+      APP_ENV: "prod"
+      DATABASE_URL: "postgresql://db:db@db:5433/db"
+    volumes:
+      - ./php-fpm/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
+      - ./logs/live:/var/log
+      - ./../backend/:/var/www/backend
+
+  node:
+    container_name: node
+    build:
+      context: ./node
+    volumes:
+      - ./../frontend/:/var/www/frontend
+
+  nginx:
+    restart: always
+    container_name: nginx
+    build:
+      context: ./nginx
+    volumes:
+      - ./../backend/:/var/www/backend
+      - ./../frontend/:/var/www/frontend
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites/:/etc/nginx/sites-available
+      - ./nginx/conf.d/:/etc/nginx/conf.d
+      - ./logs:/var/log
+    depends_on:
+      - php-fpm
+      - node
+    ports:
+      - "8080:8080"
+      - "81:80"
+
+volumes:
+  pgdata:

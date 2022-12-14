@@ -1,0 +1,14 @@
+# Redirect non-existing files or folders to index
+<IfModule mod_rewrite.c>
+  RewriteEngine on
+  RewriteRule ^$ index.html [L,QSA]
+
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>
+
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+#php_value memory_limit 1G
